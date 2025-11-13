@@ -1,4 +1,4 @@
-'use client';
+'use client'; 
 
 import {
     Table,
@@ -10,23 +10,45 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import type { User } from "@/lib/definitions"
+import type { User } from "@/features/signup/lib/definitions"
+// Importa el Skeleton si lo vas a usar aquí o en el componente contenedor
+// import { UserTableSkeleton } from "./user-table-skeleton"; 
 
-const users: User[] = [
-    { id: "1", name: "Alice Johnson", email: "alice@example.com", avatar: "https://i.pravatar.cc/150?u=a042581f4e29026704d", role: "Admin", status: "Activo" },
-    { id: "2", name: "Bob Williams", email: "bob@example.com", avatar: "https://i.pravatar.cc/150?u=a04258114e29026702d", role: "Miembro", status: "Activo" },
-    { id: "3", name: "Charlie Brown", email: "charlie@example.com", avatar: "https://i.pravatar.cc/150?u=a042581f4e29026704e", role: "Miembro", status: "Inactivo" },
-    { id: "4", name: "Diana Prince", email: "diana@example.com", avatar: "https://i.pravatar.cc/150?u=a042581f4e29026704f", role: "Miembro", status: "Pendiente" },
-    { id: "5", name: "Ethan Hunt", email: "ethan@example.com", avatar: "https://i.pravatar.cc/150?u=a042581f4e29026704g", role: "Invitado", status: "Activo" },
-];
 
+// Definición de las props que el componente necesita
+interface UserTableViewProps {
+    users: User[];
+    isLoading: boolean;
+    error: string | null;
+}
+
+// Mapeo de estilos de estado (puede permanecer aquí o moverse a 'definitions' si es global)
 const statusVariant: { [key: string]: "default" | "secondary" | "destructive" } = {
     Activo: "default",
     Pendiente: "secondary",
     Inactivo: "destructive",
 }
 
-export function UserTable() {
+export function UserTableView({ users, isLoading, error }: UserTableViewProps) {
+
+    console.log("datos de users en tableView: ", users);
+
+    // 3. Manejo de estados de UI (recibidos como props)
+    if (isLoading) {
+        // Aquí podrías usar el esqueleto real:
+        // return <UserTableSkeleton />;
+        return <div className="p-4 text-center">Cargando datos de usuarios...</div>; 
+    }
+
+    if (error) {
+        return <div className="p-4 bg-red-100 text-red-700 rounded-md">Error al cargar: {error}</div>;
+    }
+
+    if (users.length === 0) {
+        return <div className="p-4 text-center text-muted-foreground">No hay usuarios registrados.</div>;
+    }
+
+    // 4. Renderizado de la tabla con los datos
     return (
         <Table>
             <TableHeader>
@@ -43,21 +65,22 @@ export function UserTable() {
                         <TableCell>
                             <div className="flex items-center gap-3">
                                 <Avatar>
-                                    <AvatarImage src={user.avatar} alt={user.name} />
-                                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                                    {/* Usamos '?' para manejo defensivo si 'avatar' puede ser nulo/undefined */}
+                                    <AvatarImage src={user.id} alt={user.username} /> 
+                                    <AvatarFallback>cap</AvatarFallback>
                                 </Avatar>
                                 <div>
-                                    <div className="font-medium">{user.name}</div>
+                                    <div className="font-medium">{user.username}</div>
                                     <div className="text-sm text-muted-foreground">{user.email}</div>
                                 </div>
                             </div>
                         </TableCell>
-                        <TableCell>{user.role}</TableCell>
+                        <TableCell>{"user.role"}</TableCell>
                         <TableCell>
                             <Badge variant={statusVariant[user.status] || 'default'}>{user.status}</Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                            {/* Action buttons (e.g., edit, delete) would go here */}
+                            {/* Actions */}
                         </TableCell>
                     </TableRow>
                 ))}

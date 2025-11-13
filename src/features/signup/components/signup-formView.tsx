@@ -4,21 +4,22 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
-import { Mail, Lock, Loader2 } from "lucide-react";
+import { User, Mail, Lock, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { GoogleIcon } from "@/components/google-icon";
-import { login, loginWithGoogle } from "@/features/signup/lib/actions";
+import { signup, loginWithGoogle } from "@/features/signup/lib/actions";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
+
   return (
     <Button type="submit" className="w-full" disabled={pending}>
       {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      Iniciar Sesión
+      Crear Cuenta
     </Button>
   );
 }
@@ -43,11 +44,28 @@ function GoogleButton() {
   );
 }
 
-export function LoginForm() {
-  const [state, formAction] = useActionState(login, undefined);
-
+export function SignupForm() {
+  const [state, formAction] = useActionState(signup, undefined);  
+  
   return (
     <form action={formAction} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="username">Nombre de usuario</Label>
+        <div className="relative">
+          <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            id="username"
+            name="username"
+            type="text"
+            placeholder="tusuario"
+            required
+            className="pl-10"
+          />
+        </div>
+        {state?.errors?.username && (
+          <p className="text-sm text-destructive">{state.errors.username}</p>
+        )}
+      </div>
       <div className="space-y-2">
         <Label htmlFor="email">Correo Electrónico</Label>
         <div className="relative">
@@ -82,10 +100,6 @@ export function LoginForm() {
         )}
       </div>
 
-      {state?.message && (
-        <p className="text-sm text-destructive text-center">{state.message}</p>
-      )}
-
       <SubmitButton />
 
       <div className="relative my-4">
@@ -98,12 +112,12 @@ export function LoginForm() {
       <GoogleButton />
 
       <p className="text-center text-sm text-muted-foreground">
-        ¿No tienes una cuenta?{" "}
+        ¿Ya tienes una cuenta?{" "}
         <Link
-          href="/signup"
+          href="/login"
           className="font-semibold text-primary hover:underline"
         >
-          Regístrate
+          Inicia sesión
         </Link>
       </p>
     </form>

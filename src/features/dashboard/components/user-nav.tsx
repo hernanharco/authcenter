@@ -1,6 +1,6 @@
-import Link from 'next/link';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
+import Link from "next/link";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,9 +9,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { LogOut, User } from 'lucide-react';
-import { logout } from '@/lib/actions';
+} from "@/components/ui/dropdown-menu";
+import { LogOut, User } from "lucide-react";
+import { logout } from "@/features/signup/lib/actions";
 
 export function UserNav() {
   // In a real app, you'd get user data from a session.
@@ -22,7 +22,10 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9">
-            <AvatarImage src="https://i.pravatar.cc/150?u=a042581f4e29026704d" alt="@shadcn" />
+            <AvatarImage
+              src="https://i.pravatar.cc/150?u=a042581f4e29026704d"
+              alt="@shadcn"
+            />
             <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
           </Avatar>
         </Button>
@@ -40,21 +43,21 @@ export function UserNav() {
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
             <Link href="/dashboard/profile">
-                <User className="mr-2 h-4 w-4" />
-                <span>Perfil</span>
+              <User className="mr-2 h-4 w-4" />
+              <span>Perfil</span>
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <form action={logout} className="w-full">
-            <DropdownMenuItem asChild>
-                <button type="submit" className="w-full">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Cerrar sesión</span>
-                </button>
-            </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <button type="submit" className="w-full">
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Cerrar sesión</span>
+            </button>
+          </DropdownMenuItem>
         </form>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }

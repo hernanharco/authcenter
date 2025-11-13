@@ -13,7 +13,7 @@ export default async function LoginPage() {
     authData = await fetchAuthStatus(); 
     
     // **Log en la terminal del servidor**
-    console.log("Datos de autenticación recibidos:", authData);
+    console.log("Datos de autenticación recibidos app>(auth)>login>page.tsx:", authData);
 
   } catch (error) {
     // Si la API falla (ej: error 500, o servicio caído), registramos el error
