@@ -1,8 +1,13 @@
-// src/app/api/auth/route.ts (asumiendo que estás usando Next.js App Router)
-
+import { NextRequest, NextResponse } from 'next/server';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
+// ⚠️ Usando tus imports:
 import MongoDBConnector from '@/database/MongoDBConnector'; 
 import UserService from '@/services/UserService';
-import { NextResponse } from 'next/server';
+import { UserDocument } from '@/features/login/models/User'
+
+// Clave secreta para firmar el JWT. Debe ser la misma en 'status/route.ts'
+const JWT_SECRET = process.env.JWT_SECRET || 'mi_clave_secreta_fallback_insegura'; 
 
 /**
  * Función de utilidad para manejar la conexión a la base de datos.
@@ -10,6 +15,7 @@ import { NextResponse } from 'next/server';
 async function connectToDatabase() {
     try {
         await MongoDBConnector.connect();
+        return null; // Conexión exitosa
     } catch (e) {
         // La conexión falló, devuelve un error 503 Service Unavailable
         return NextResponse.json(
@@ -19,219 +25,77 @@ async function connectToDatabase() {
     }
 }
 
-// ----------------------------------------------------
-// MANEJADORES HTTP
-// ----------------------------------------------------
-
 /**
- * [GET] Obtener todos los usuarios.
- * Ruta: /api/auth
+ * [POST] Maneja el inicio de sesión y la generación del JWT.
+ * Ruta: /api/auth/login
  */
-export async function GET() {
+export async function POST(request: NextRequest) {
     // 1. Conexión a la DB
     const dbConnectionError = await connectToDatabase();
     if (dbConnectionError) return dbConnectionError;
 
+    let email: string, password: string;
     try {
-        const users = await UserService.findAllUsers();
-        
-        if (users.length === 0) {
-            return NextResponse.json(
-                { message: 'No hay usuarios registrados.' }, 
-                { status: 200 }
-            );
-        }
-
-        // Devolvemos la lista de usuarios (solo datos públicos)
-        const safeUsers = users.map(user => ({
-            id: user._id,
-            username: user.username,
-            email: user.email,
-            createdAt: user.createdAt,
-            updatedAt: user.updatedAt,
-        }));
-
-        return NextResponse.json({ data: safeUsers }, { status: 200 });
-
-    } catch (error) {
-        console.error('Error al obtener todos los usuarios:', error);
-        return NextResponse.json(
-            { error: 'Error interno del servidor al obtener usuarios.' },
-            { status: 500 }
-        );
-    }
-}
-
-
-/**
- * [POST] Crear un nuevo usuario (Registro).
- * Ruta: /api/auth
- */
-export async function POST(request: Request) {
-    // 1. Conexión a la DB
-    const dbConnectionError = await connectToDatabase();
-    if (dbConnectionError) return dbConnectionError;
-
-    // 2. Obtener y validar datos de la solicitud
-    let data;
-    try {
-        data = await request.json();
+        const data = await request.json();
+        email = data.email;
+        password = data.password;
     } catch (e) {
         return NextResponse.json(
             { error: 'Formato de JSON inválido' },
             { status: 400 }
         );
     }
-    
-    // 📢 VERIFICACIÓN DE DATOS (PARA CONSOLE.LOG)
-    console.log('Datos de Registro recibidos en el Backend:', data);
 
-    const { username, email, password } = data;
-
-    if (!username || !email || !password) {
+    if (!email || !password) {
         return NextResponse.json(
-            { error: 'Faltan campos requeridos (username, email, password).' },
+            { message: "Credenciales incompletas (email o password)." },
             { status: 400 }
         );
     }
 
-    // 3. Lógica de Negocio (Llamada al Service)
     try {
-        // NOTA: En la vida real, hashearías la contraseña aquí (e.g., con bcrypt)
-        const passwordHash = `HASH_${password}_PLACEHOLDER`; 
+        // 2. 🔎 Buscar el Usuario (necesita obtener el hash de la contraseña)
+        // Asumo que UserService.findUserByEmail acepta una opción para incluir la password
+        const user = await UserService.findUserByEmail(email, { includePassword: true }) as UserDocument; 
 
-        const newUser = await UserService.createUser(username, email, passwordHash);
+        if (!user || !user.password) {
+            throw new Error("Credenciales inválidas."); 
+        }
 
-        // 4. Respuesta Exitosa
+        // 3. 🔑 Comparar la Contraseña Haseada con el texto plano ingresado
+        const isMatch = await bcrypt.compare(password, user.password); 
+
+        if (!isMatch) {
+            throw new Error("Credenciales inválidas.");
+        }
+
+        // 4. 🪙 Generar el JWT
+        const token = jwt.sign(
+            { userId: user._id.toString() }, // Payload: el ID del usuario
+            JWT_SECRET,
+            { expiresIn: '7d' } // El token expira en 7 días
+        );
+
+        // 5. 200 OK: Respuesta Exitosa
+        return NextResponse.json(
+            {
+                message: "Inicio de sesión exitoso.",
+                token,
+                userId: user._id.toString(),
+            },
+            { status: 200 }
+        );
+
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Error interno del servidor.";
+        console.error("Fallo de login:", error);
+
+        // Retorna 401 para cualquier fallo de autenticación o credenciales
         return NextResponse.json(
             { 
-                message: 'Usuario registrado con éxito', 
-                user: {
-                    id: newUser._id,
-                    username: newUser.username,
-                    email: newUser.email,
-                    createdAt: newUser.createdAt,
-                    updatedAt: newUser.updatedAt,
-                }
+                message: errorMessage.includes("Credenciales") ? errorMessage : "Credenciales inválidas." 
             },
-            { status: 201 } // 201 Created
-        );
-    } catch (error: any) {
-        // Manejo de errores específicos (ej. duplicado)
-        if (error.code === 11000) { // Código de error de duplicado en MongoDB
-            return NextResponse.json(
-                { error: 'El usuario o email ya están registrados.' },
-                { status: 409 } // 409 Conflict
-            );
-        }
-        
-        console.error('Error al crear usuario:', error);
-        return NextResponse.json(
-            { error: 'Error interno del servidor al crear el usuario.' },
-            { status: 500 }
-        );
-    }
-}
-
-
-/**
- * [PUT/PATCH] Actualizar completamente/parcialmente un usuario.
- * Ruta: /api/auth?id={userId}
- */
-export async function PUT(request: Request) {
-    // 1. Conexión a la DB
-    const dbConnectionError = await connectToDatabase();
-    if (dbConnectionError) return dbConnectionError;
-
-    // 2. Obtener ID de la URL
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('id');
-
-    if (!userId) {
-        return NextResponse.json(
-            { error: 'Falta el parámetro de consulta "id" para actualizar.' },
-            { status: 400 }
-        );
-    }
-
-    // 3. Obtener datos y actualizar (simplificado: solo actualizamos el username)
-    let updateData;
-    try {
-        updateData = await request.json();
-    } catch (e) {
-        return NextResponse.json(
-            { error: 'Formato de JSON inválido' },
-            { status: 400 }
-        );
-    }
-
-    // En un caso real, la lógica de actualización iría a UserService
-    try {
-        const updatedUser = await UserService.updateUser(userId, updateData);
-
-        if (!updatedUser) {
-            return NextResponse.json(
-                { error: 'Usuario no encontrado.' },
-                { status: 404 }
-            );
-        }
-
-        return NextResponse.json(
-            { message: 'Usuario actualizado con éxito', user: { id: updatedUser._id, username: updatedUser.username } },
-            { status: 200 }
-        );
-    } catch (error) {
-        console.error('Error al actualizar usuario:', error);
-        return NextResponse.json(
-            { error: 'Error interno del servidor al actualizar el usuario.' },
-            { status: 500 }
-        );
-    }
-}
-// NOTA: Para PATCH, generalmente se usa el mismo cuerpo de lógica que PUT para actualizar parcialmente. 
-// Por simplicidad, omitiremos la función PATCH aquí y asumiremos que PUT maneja la lógica de "reemplazar".
-
-
-/**
- * [DELETE] Eliminar un usuario.
- * Ruta: /api/auth?id={userId}
- */
-export async function DELETE(request: Request) {
-    // 1. Conexión a la DB
-    const dbConnectionError = await connectToDatabase();
-    if (dbConnectionError) return dbConnectionError;
-
-    // 2. Obtener ID de la URL
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('id');
-
-    if (!userId) {
-        return NextResponse.json(
-            { error: 'Falta el parámetro de consulta "id" para eliminar.' },
-            { status: 400 }
-        );
-    }
-
-    // 3. Lógica de Eliminación (Llamada al Service)
-    try {
-        const result = await UserService.deleteUser(userId);
-
-        if (!result) {
-            return NextResponse.json(
-                { error: 'Usuario no encontrado para eliminar.' },
-                { status: 404 }
-            );
-        }
-
-        return NextResponse.json(
-            { message: 'Usuario eliminado con éxito', id: userId },
-            { status: 200 }
-        );
-    } catch (error) {
-        console.error('Error al eliminar usuario:', error);
-        return NextResponse.json(
-            { error: 'Error interno del servidor al eliminar el usuario.' },
-            { status: 500 }
+            { status: 401 }
         );
     }
 }

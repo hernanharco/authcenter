@@ -8,7 +8,7 @@ import { User, Mail, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { updateProfile } from "@/features/signup/lib/actions";
+import { updateProfile } from "@/features/signup/lib/actions_signup";
 import { cn } from "@/lib/utils";
 
 function SubmitButton() {

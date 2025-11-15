@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  # Nombre del servicio, puedes cambiarlo
+  app:
+    # 1. Indicamos que Docker Compose debe construir la imagen
+    # usando el Dockerfile en el directorio actual.
+    build:
+      context: .
+      # Usamos 'runner' para solo construir la etapa final de producción.
+      target: runner
+    
+    # 2. El nombre de la imagen final que se creará (opcional)
+    image: mi-app-prod:latest
+    
+    # 3. Mapeo de puertos: Host:Contenedor
+    # Aquí mapeamos el puerto 3000 de tu máquina al puerto 3000 del contenedor.
+    ports:
+      - "3000:3000"
+      
+    # 4. Política de reinicio: Asegura que el contenedor se reinicie si falla,
+    # excepto si lo detienes explícitamente.
+    restart: unless-stopped
+    
+    # 5. Variables de entorno (Opcional, pero recomendado)
+    # Carga variables de entorno desde un archivo .env si lo tienes.
+    # env_file:
+    #   - .env

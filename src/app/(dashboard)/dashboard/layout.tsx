@@ -17,7 +17,7 @@ import {
 import { Logo } from "@/components/logo";
 import { UserNav } from "@/features/dashboard/components/user-nav";
 import { Home, User, Settings, LogOut } from "lucide-react";
-import { logout } from "@/features/signup/lib/actions";
+import { logout } from "@/features/signup/lib/actions_signup";
 
 export default function DashboardLayout({
   children,

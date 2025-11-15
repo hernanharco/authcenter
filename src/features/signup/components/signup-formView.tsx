@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { GoogleIcon } from "@/components/google-icon";
-import { signup, loginWithGoogle } from "@/features/signup/lib/actions";
+import { signup, loginWithGoogle } from "@/features/signup/lib/actions_signup";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -45,8 +45,8 @@ function GoogleButton() {
 }
 
 export function SignupForm() {
-  const [state, formAction] = useActionState(signup, undefined);  
-  
+  const [state, formAction] = useActionState(signup, undefined);
+
   return (
     <form action={formAction} className="space-y-4">
       <div className="space-y-2">

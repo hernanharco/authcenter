@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LogOut, User } from "lucide-react";
-import { logout } from "@/features/signup/lib/actions";
+import { logout } from "@/features/signup/lib/actions_signup";
 
 export function UserNav() {
   // In a real app, you'd get user data from a session.

@@ -65,7 +65,7 @@ export async function signup(prevState: any, formData: FormData) {
       password,
     });
 
-    console.log(`✅ Registro exitoso. Nuevo Usuario ID: ${response.username}`);
+    console.log(`✅ Registro exitoso. Nuevo Usuario ID: ${response}`);
 
     // Redirige al dashboard
     redirect("/dashboard");
@@ -92,35 +92,6 @@ export async function loginWithGoogle() {
   console.log("➡️ Iniciando flujo OAuth de Google...");
   // In a real app, you'd initiate the OAuth flow with Google.
   redirect("/dashboard");
-}
-
-export async function login(
-  prevState: { message: string } | undefined,
-  formData: FormData
-) {
-  const validatedFields = loginSchema.safeParse(
-    Object.fromEntries(formData.entries())
-  );
-
-  if (!validatedFields.success) {
-    return {
-      // @ts-ignore
-      errors: validatedFields.error.flatten().fieldErrors,
-      message: "Faltan campos. Fallo al iniciar sesión.",
-    };
-  }
-
-  const { email, password } = validatedFields.data;
-
-  // Mock de verificación de credenciales
-  if (email === "admin@example.com" && password === "password") {
-    console.log("🔑 Login exitoso para admin@example.com");
-    redirect("/dashboard");
-  }
-
-  return {
-    message: "Correo electrónico o contraseña no válidos",
-  };
 }
 
 export async function updateProfile(prevState: any, formData: FormData) {
